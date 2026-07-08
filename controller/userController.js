@@ -1,9 +1,10 @@
-const jwt = require("jsonwebtoken");
-const jwtCheck = require("../middleware/jwtCheck");
-const users = require("../users.json");
+import jwt from "jsonwebtoken";
+import fs from "fs";
+import jwtCheck from "../middleware/jwtFunc.js";
+import users from "../users.json" with { type: "json" };
 
 export const login = (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req?.body;
   const user = users.find(
     (u) => u.username === username && u.password === password,
   );
@@ -11,8 +12,8 @@ export const login = (req, res) => {
   if (!user) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
-
-  const token = jwt.sign({ username }, process.env.JWT_KEY, {
+  const payload = { id: user.id, username: user.username };
+  const token = jwt.sign(payload, process.env.JWT_KEY, {
     expiresIn: "1h",
   });
 
@@ -20,11 +21,27 @@ export const login = (req, res) => {
 };
 
 export const register = (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req?.body;
 
-  const token = jwt.sign({ username }, process.env.JWT_KEY, {
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ message: "Username and password are required" });
+  }
+
+  const token = jwt.sign({ id: Date.now(), username }, process.env.JWT_KEY, {
     expiresIn: "1h",
   });
+
+  fs.writeFile(
+    "./users.json",
+    JSON.stringify([...users, { id: Date.now(), username, password }], null, 2),
+    (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error saving user" });
+      }
+    },
+  );
 
   res.json({ message: "User registered successfully", token });
 };

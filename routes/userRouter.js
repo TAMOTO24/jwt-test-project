@@ -1,13 +1,19 @@
-const router = require("express").Router();
+import Router from "express";
 
-const { login, register } = require("../controller/userController");
+import { login, register } from "../controller/userController.js";
+import jwtCheck from "../middleware/jwtFunc.js";
+import users from "../users.json" with { type: "json" };
 
-const jwtCheck = require("../middleware/jwtFunc");
-
+const router = Router();
 router.use("/api", jwtCheck);
 
-router.get("/users");
-router.post("/api/login", login);
-router.post("/api/register", register);
+router.get("/api/users", (req, res) => {
+  res.json({ message: "Hello user " + req.user.username, users });
+});
+router.post("/login", login);
+router.post("/register", register);
+router.get("/api/protected", jwtCheck, (req, res) => {
+  res.json({ message: "This is a protected route" });
+});
 
-module.exports = router;
+export default router;

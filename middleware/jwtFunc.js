@@ -1,22 +1,24 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 const jwtCheck = (req, res, next) => {
-  const payload = req.body;
-  const token = req.headers.authorization?.split(" ")[1];
+  const bearerHeader = req.headers["authorization"];
 
-  console.log("Payload:", payload);
-  console.log("Token:", token);
-  console.log(req.headers);
-
-  if (!token) {
+  if (!bearerHeader) {
     return res.status(401).json({ message: "No token provided" });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    req.user = decoded;
-    next();
+    const token = bearerHeader.split(" ")[0];
+    jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      req.user = decoded;
+      next();
+    });
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
+export default jwtCheck;
